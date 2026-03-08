@@ -43,8 +43,8 @@ export async function callClaudeJSON<T>(
     temperature: options.temperature ?? 0.2,
   });
 
-  // Extract JSON from response (handles markdown code blocks)
-  const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/) ?? text.match(/(\{[\s\S]*\})/);
+  // Extract JSON from response (handles markdown code blocks, objects, arrays)
+  const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/) ?? text.match(/(\{[\s\S]*\})/) ?? text.match(/(\[[\s\S]*\])/);
   const jsonStr = jsonMatch ? jsonMatch[1].trim() : text.trim();
 
   try {

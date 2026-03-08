@@ -131,3 +131,58 @@ Devuelve SOLO JSON con esta estructura:
   "aliases": []
 }`;
 }
+
+/** Genera un personaje completo desde cero (incl. nombre) a partir del rol y concepto opcional */
+export function buildCharacterFromConceptPrompt(
+  bookTitle: string,
+  genre: string,
+  synopsis: string,
+  role: string,
+  concept?: string
+): string {
+  const conceptLine = concept?.trim()
+    ? `- Concepto o pista: ${concept}`
+    : '- Concepto: inventa un personaje coherente con la historia';
+  return `Eres un editor literario. CREA UN PERSONAJE COMPLETO desde cero para esta novela. Debes inventar TODO: nombre, edad, descripción física, voz, motivación, tics, muletilla, etc.
+
+NOVELA: ${bookTitle}
+GÉNERO: ${genre}
+SINOPSIS: ${synopsis}
+
+INFORMACIÓN DEL PERSONAJE A CREAR:
+- Rol: ${role}
+${conceptLine}
+
+Debes generar un nombre apropiado para el género, época y tono de la historia. El personaje debe encajar en la sinopsis.
+
+El tic físico DEBE:
+- Ser específico y único (no "aprieta mandíbula" — genérico)
+- Tener límite 2-4 por capítulo
+- Tener regla de evolución con el arco
+
+La muletilla DEBE ser palabra/frase 1-4 palabras, límite 3 por capítulo.
+
+Devuelve SOLO JSON con esta estructura:
+{
+  "name": "Nombre que inventes",
+  "gender": "male | female | neutral | unknown",
+  "role": "${role}",
+  "age": "...",
+  "physicalDescription": "...",
+  "distinctiveVoice": "Cómo habla, qué NUNCA diría",
+  "centralMotivation": "UNA motivación que nunca cambia",
+  "internalContradiction": "El conflicto que lo hace humano",
+  "lineTheyWontCross": "Lo que lo define",
+  "fearResponse": "Cómo reacciona al miedo",
+  "painResponse": "Cómo reacciona al dolor",
+  "lossResponse": "Cómo reacciona a la pérdida",
+  "fillerWord": "su muletilla",
+  "fillerWordMaxPerChapter": 3,
+  "ticDescription": "tic físico específico y único",
+  "ticMaxPerChapter": 3,
+  "ticMaxInBook": 8,
+  "ticEvolutionRule": "cómo evoluciona o desaparece con su arco",
+  "knownFacts": ["hecho inmutable 1", "hecho inmutable 2"],
+  "aliases": []
+}`;
+}

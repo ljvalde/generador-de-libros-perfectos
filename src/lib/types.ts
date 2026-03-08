@@ -29,6 +29,8 @@ export interface CharacterState {
 
 export interface CharacterProfile {
   name: string;
+  /** Pista opcional para IA cuando se genera desde cero (ej: "detective", "María") */
+  concept?: string;
   gender: 'male' | 'female' | 'neutral' | 'unknown';
   role: 'protagonist' | 'deuteragonist' | 'antagonist' | 'secondary' | 'minor';
   age: string;

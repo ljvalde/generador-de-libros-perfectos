@@ -1,14 +1,12 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Book } from '@/lib/types';
 import BookList from '@/components/BookList';
-import BookWizard from '@/components/BookWizard';
-import BookEditor from '@/components/BookEditor';
 
 export default function Home() {
+  const router = useRouter();
   const [books, setBooks] = useState<Book[]>([]);
-  const [view, setView] = useState<'list' | 'wizard' | 'editor'>('list');
-  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchBooks = useCallback(async () => {
@@ -22,44 +20,20 @@ export default function Home() {
 
   useEffect(() => { fetchBooks(); }, [fetchBooks]);
 
-  const openBook = async (book: Book) => {
-    const res = await fetch(`/api/books/${book.id}`);
-    const full = await res.json();
-    setSelectedBook(full);
-    setView('editor');
-  };
-
-  const onBookCreated = async (book: Book) => {
-    setSelectedBook(book);
-    setView('editor');
-    fetchBooks();
+  const openBook = (book: Book) => {
+    router.push(`/libro/${book.id}`);
   };
 
   const deleteBook = async (id: string) => {
     await fetch(`/api/books/${id}`, { method: 'DELETE' });
     fetchBooks();
-    if (selectedBook?.id === id) { setSelectedBook(null); setView('list'); }
   };
-
-  if (view === 'wizard') {
-    return <BookWizard onCreated={onBookCreated} onCancel={() => setView('list')} />;
-  }
-
-  if (view === 'editor' && selectedBook) {
-    return (
-      <BookEditor
-        book={selectedBook}
-        onUpdate={setSelectedBook}
-        onBack={() => { setView('list'); fetchBooks(); }}
-      />
-    );
-  }
 
   return (
     <BookList
       books={books}
       loading={loading}
-      onNew={() => setView('wizard')}
+      onNew={() => router.push('/nueva-historia/concepto')}
       onOpen={openBook}
       onDelete={deleteBook}
     />
