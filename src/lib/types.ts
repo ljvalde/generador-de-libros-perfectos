@@ -29,6 +29,8 @@ export interface CharacterState {
 
 export interface CharacterProfile {
   name: string;
+  /** Pista opcional para IA cuando se genera desde cero (ej: "detective", "María") */
+  concept?: string;
   gender: 'male' | 'female' | 'neutral' | 'unknown';
   role: 'protagonist' | 'deuteragonist' | 'antagonist' | 'secondary' | 'minor';
   age: string;
@@ -133,7 +135,7 @@ export interface VerificationError {
 }
 
 export interface VerificationWarning {
-  type: 'EMOTIONAL_DEBT_IGNORED' | 'TIME_UNCHANGED' | 'PLOT_THREAD_IGNORED' | 'VOICE_INCONSISTENCY';
+  type: 'EMOTIONAL_DEBT_IGNORED' | 'TIME_UNCHANGED' | 'PLOT_THREAD_IGNORED' | 'VOICE_INCONSISTENCY' | 'WORD_COUNT_LOW' | 'WORD_COUNT_HIGH';
   description: string;
 }
 

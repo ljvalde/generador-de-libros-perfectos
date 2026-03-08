@@ -1,4 +1,27 @@
-import { CreateBookPayload, StateBible } from '../types';
+import { CreateBookPayload, StateBible, Genre } from '../types';
+
+export function buildConceptGeneratorPrompt(seed?: string): string {
+  const seedLine = seed?.trim()
+    ? `SEMILLA O TEMA DEL USUARIO: ${seed}`
+    : 'SEMILLA: Inventa un concepto original y sorprendente.';
+  return `Eres un editor literario de nivel editorial. Genera un concepto original para una novela.
+
+${seedLine}
+
+Requisitos del concepto:
+- El título debe ser evocador, no genérico
+- La sinopsis debe tener 2-3 párrafos: conflicto central, personajes clave, las apuestas
+- El subgénero debe ser específico (ej: "distópico post-pandemia" no solo "ciencia ficción")
+- El género debe ser uno de: scifi, fantasy, thriller, romance, horror, literary, mystery, adventure
+
+Devuelve SOLO JSON con esta estructura:
+{
+  "title": "Título de la novela",
+  "genre": "scifi | fantasy | thriller | romance | horror | literary | mystery | adventure",
+  "subgenre": "subgénero específico",
+  "synopsis": "Párrafo 1: el mundo y el conflicto central.\\n\\nPárrafo 2: el protagonista y lo que arriesga.\\n\\nPárrafo 3: la pregunta central que debe responder la historia."
+}`;
+}
 
 export function buildInitialBiblePrompt(payload: CreateBookPayload): string {
   return `Eres un editor literario de nivel editorial. Analiza la propuesta de libro y genera la Biblia de Estado inicial.
@@ -27,14 +50,52 @@ MUNDO:
 OUTLINE:
 ${payload.outline.map(c => `Cap ${c.number}: "${c.title}" — ${c.summary}`).join('\n')}
 
-Genera la Biblia de Estado inicial (antes del capítulo 1) como JSON puro. Incluye:
-- El estado inicial de cada personaje (todos vivos, ubicación inicial, condición física de inicio)
-- markerUsageCount vacío
-- pendingEmotionalDebts vacío
-- Cualquier regla de mundo CLARA que ya conozcas de la sinopsis
-- Si hay cuentas regresivas mencionadas en el outline, inicializarlas
+Genera la Biblia de Estado inicial (antes del capítulo 1) como JSON puro. Reglas:
+- Todos los personajes empiezan vivos (status: "active"), reactivationRequired: false
+- markerUsageCount: {} (vacío)
+- pendingEmotionalDebts: [] (vacío)
+- Si el outline menciona cuentas regresivas, inicialízalas en timeCountdowns
+- worldState y mainConflictStatus deben reflejar el estado ANTES del cap 1
 
-DEVUELVE SOLO JSON VÁLIDO con la estructura StateBible completa.`;
+DEVUELVE SOLO JSON con EXACTAMENTE esta estructura:
+{
+  "lastUpdatedChapter": 0,
+  "characters": [
+    {
+      "name": "...",
+      "status": "active",
+      "gender": "...",
+      "location": "ubicación inicial",
+      "physicalCondition": "Sin lesiones",
+      "emotionalState": "Estado inicial",
+      "lastSeenChapter": 0,
+      "reactivationRequired": false,
+      "fillerWord": "...",
+      "fillerWordMaxPerChapter": 3,
+      "ticDescription": "...",
+      "ticMaxPerChapter": 3,
+      "ticMaxInBook": 8,
+      "ticCurrentTotal": 0,
+      "ticEvolutionRule": "...",
+      "aliases": []
+    }
+  ],
+  "markerUsageCount": {},
+  "pendingEmotionalDebts": [],
+  "narrativeInventory": {
+    "usedOpeningTypes": [],
+    "usedDynamics": [],
+    "openPlotThreads": [],
+    "resolvedPlotThreads": [],
+    "plannedTwists": []
+  },
+  "worldState": "Estado del mundo antes del capítulo 1",
+  "mainConflictStatus": "Conflicto sin iniciar",
+  "timeCountdowns": [],
+  "worldRules": [],
+  "prohibitedPatterns": [],
+  "patternUsageCount": {}
+}`;
 }
 
 export function buildOutlineGeneratorPrompt(
@@ -112,6 +173,61 @@ Devuelve SOLO JSON con esta estructura:
   "name": "${basicInfo.name}",
   "gender": "male | female | neutral | unknown",
   "role": "${basicInfo.role}",
+  "age": "...",
+  "physicalDescription": "...",
+  "distinctiveVoice": "Cómo habla, qué NUNCA diría",
+  "centralMotivation": "UNA motivación que nunca cambia",
+  "internalContradiction": "El conflicto que lo hace humano",
+  "lineTheyWontCross": "Lo que lo define",
+  "fearResponse": "Cómo reacciona al miedo",
+  "painResponse": "Cómo reacciona al dolor",
+  "lossResponse": "Cómo reacciona a la pérdida",
+  "fillerWord": "su muletilla",
+  "fillerWordMaxPerChapter": 3,
+  "ticDescription": "tic físico específico y único",
+  "ticMaxPerChapter": 3,
+  "ticMaxInBook": 8,
+  "ticEvolutionRule": "cómo evoluciona o desaparece con su arco",
+  "knownFacts": ["hecho inmutable 1", "hecho inmutable 2"],
+  "aliases": []
+}`;
+}
+
+/** Genera un personaje completo desde cero (incl. nombre) a partir del rol y concepto opcional */
+export function buildCharacterFromConceptPrompt(
+  bookTitle: string,
+  genre: string,
+  synopsis: string,
+  role: string,
+  concept?: string
+): string {
+  const conceptLine = concept?.trim()
+    ? `- Concepto o pista: ${concept}`
+    : '- Concepto: inventa un personaje coherente con la historia';
+  return `Eres un editor literario. CREA UN PERSONAJE COMPLETO desde cero para esta novela. Debes inventar TODO: nombre, edad, descripción física, voz, motivación, tics, muletilla, etc.
+
+NOVELA: ${bookTitle}
+GÉNERO: ${genre}
+SINOPSIS: ${synopsis}
+
+INFORMACIÓN DEL PERSONAJE A CREAR:
+- Rol: ${role}
+${conceptLine}
+
+Debes generar un nombre apropiado para el género, época y tono de la historia. El personaje debe encajar en la sinopsis.
+
+El tic físico DEBE:
+- Ser específico y único (no "aprieta mandíbula" — genérico)
+- Tener límite 2-4 por capítulo
+- Tener regla de evolución con el arco
+
+La muletilla DEBE ser palabra/frase 1-4 palabras, límite 3 por capítulo.
+
+Devuelve SOLO JSON con esta estructura:
+{
+  "name": "Nombre que inventes",
+  "gender": "male | female | neutral | unknown",
+  "role": "${role}",
   "age": "...",
   "physicalDescription": "...",
   "distinctiveVoice": "Cómo habla, qué NUNCA diría",

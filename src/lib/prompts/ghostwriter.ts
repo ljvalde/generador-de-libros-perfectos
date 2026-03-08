@@ -111,7 +111,8 @@ RESUMEN DEL OUTLINE: ${outline?.summary ?? 'Sin resumen'}
 EVENTOS CLAVE: ${outline?.keyEvents.join(' / ') ?? 'N/A'}
 OBJETIVO EMOCIONAL: ${outline?.emotionalTarget ?? 'Sin objetivo'}
 PERSONAJES EN FOCO: ${outline?.characterFocus.join(', ') ?? 'N/A'}
-PALABRAS OBJETIVO: ${targetWords}
+RANGO DE PALABRAS OBLIGATORIO: entre 1,750 y 1,950 palabras (objetivo ideal: ${targetWords})
+⚠️ ESTE RANGO ES UN REQUISITO TÉCNICO, NO UNA SUGERENCIA. Ver instrucción final.
 
 CIERRE DE LOS ÚLTIMOS CAPÍTULOS (texto real — NO outline):
 ${prevChapters || 'Primer capítulo del libro.'}
@@ -181,5 +182,13 @@ INSTRUCCIÓN FINAL
 ══════════════════════════════════════════════════════
 Escribe el capítulo completo en español, en prosa narrativa fluida, sin encabezados
 de sección, sin meta-comentarios, sin "[continúa...]". Solo el capítulo, del inicio al cierre.
-Objetivo: ~${targetWords} palabras. Título del capítulo al inicio en formato: # Título`;
+Título del capítulo al inicio en formato: # Título
+
+CONTROL DE PALABRAS — OBLIGATORIO ANTES DE ENTREGAR:
+• El capítulo DEBE tener entre 1,750 y 1,950 palabras. No menos. No más.
+• Al terminar el borrador, estima el conteo. Si estás por debajo de 1,750:
+  → Expande con detalle sensorial, reacción interna del protagonista o diálogo adicional.
+• Si superas 1,950:
+  → Recorta adjetivos redundantes, diálogo espejo o descripciones repetidas.
+• No entregues el capítulo hasta que el conteo esté dentro del rango 1,750–1,950.`;
 }

@@ -1,6 +1,8 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 import { Book, Chapter } from '@/lib/types';
+import { downloadBookJson } from '@/lib/bookDraft';
 import ChapterList from './ChapterList';
 import ChapterViewer from './ChapterViewer';
 import StateBibleView from './StateBibleView';
@@ -50,7 +52,7 @@ export default function BookEditor({ book, onUpdate, onBack }: Props) {
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <header style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', flexShrink: 0 }}>
-        <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '0.9rem' }}>← Libros</button>
+        <Link href="/" style={{ color: 'var(--text-dim)', fontSize: '0.9rem', textDecoration: 'none' }}>← Libros</Link>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 style={{ fontSize: '1.1rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{book.title}</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '4px' }}>
@@ -62,7 +64,10 @@ export default function BookEditor({ book, onUpdate, onBack }: Props) {
             </span>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <button onClick={() => downloadBookJson(book)} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)', padding: '0.4rem 0.9rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}>
+            ⬇ Descargar JSON
+          </button>
           <button onClick={() => setView('chapters')} style={{ background: view === 'chapters' ? 'var(--accent-dim)' : 'var(--surface2)', border: `1px solid ${view === 'chapters' ? 'var(--accent)' : 'var(--border)'}`, color: 'var(--text)', padding: '0.4rem 0.9rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}>
             Capítulos
           </button>
