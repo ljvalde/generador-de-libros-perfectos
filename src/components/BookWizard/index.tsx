@@ -78,7 +78,7 @@ export default function BookWizard({ step, onStepChange, onCreated, onCancel, lo
   const [subgenre, setSubgenre] = useState('');
   const [synopsis, setSynopsis] = useState('');
   const [targetChapters, setTargetChapters] = useState(20);
-  const [targetWords, setTargetWords] = useState(3000);
+  const [targetWords, setTargetWords] = useState(1850);
   const [characters, setCharacters] = useState<CharacterProfile[]>([EMPTY_CHAR()]);
   const [pov, setPov] = useState<'first' | 'third-limited' | 'third-omniscient'>('third-limited');
   const [tone, setTone] = useState('');
@@ -281,8 +281,8 @@ export default function BookWizard({ step, onStepChange, onCreated, onCancel, lo
                   <input type="number" style={inputStyle} value={targetChapters} onChange={e => setTargetChapters(+e.target.value)} min={5} max={50} />
                 </div>
                 <div style={fieldStyle}>
-                  <label style={labelStyle}>Palabras por capítulo</label>
-                  <input type="number" style={inputStyle} value={targetWords} onChange={e => setTargetWords(+e.target.value)} min={1000} max={8000} step={500} />
+                  <label style={labelStyle}>Palabras por capítulo (1,750–1,950)</label>
+                  <input type="number" style={inputStyle} value={targetWords} onChange={e => setTargetWords(Math.min(1950, Math.max(1750, +e.target.value)))} min={1750} max={1950} step={50} />
                 </div>
               </div>
             </div>

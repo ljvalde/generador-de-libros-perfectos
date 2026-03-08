@@ -37,7 +37,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const lines = rawContent.trim().split('\n');
     const titleLine = lines[0].startsWith('#') ? lines[0].replace(/^#+\s*/, '') : outline.title;
     const content = lines[0].startsWith('#') ? lines.slice(1).join('\n').trim() : rawContent.trim();
-    const wordCount = content.split(/\s+/).length;
+    const wordCount = content.split(/\s+/).filter(Boolean).length;
+
+    const WORD_MIN = 1750;
+    const WORD_MAX = 1950;
+    const wordCountOutOfRange = wordCount < WORD_MIN || wordCount > WORD_MAX;
 
     // ── STEP 2: Verify chapter ────────────────────────────────────────────────
     let verificationResult: VerificationResult | undefined;
@@ -48,6 +52,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       );
     } catch (e) {
       console.warn('Verifier failed:', e);
+    }
+
+    // Inject word count check into verification result
+    if (wordCountOutOfRange) {
+      const wcWarning = wordCount < WORD_MIN
+        ? { type: 'WORD_COUNT_LOW' as const, description: `El capítulo tiene ${wordCount} palabras — mínimo requerido: ${WORD_MIN}.` }
+        : { type: 'WORD_COUNT_HIGH' as const, description: `El capítulo tiene ${wordCount} palabras — máximo permitido: ${WORD_MAX}.` };
+      if (verificationResult) {
+        verificationResult.warnings = [wcWarning, ...(verificationResult.warnings ?? [])];
+      } else {
+        verificationResult = { passed: true, criticalErrors: [], warnings: [wcWarning], markerCountsThisChapter: {} };
+      }
     }
 
     // ── STEP 3: Update State Bible ────────────────────────────────────────────
