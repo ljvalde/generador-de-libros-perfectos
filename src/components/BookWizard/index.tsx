@@ -41,6 +41,8 @@ export default function BookWizard({ step, onStepChange, onCreated, onCancel, lo
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [generatingChar, setGeneratingChar] = useState<number | null>(null);
+  const [generatingConcept, setGeneratingConcept] = useState(false);
+  const [conceptSeed, setConceptSeed] = useState('');
   const [generatingWorld, setGeneratingWorld] = useState(false);
   const worldGeneratedRef = useRef(false);
 
@@ -70,6 +72,54 @@ export default function BookWizard({ step, onStepChange, onCreated, onCancel, lo
     } finally {
       setGeneratingChar(null);
     }
+  };
+
+  const generateConceptWithAI = async () => {
+    setGeneratingConcept(true);
+    setError('');
+    try {
+      const res = await fetch('/api/concept/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seed: conceptSeed.trim() || undefined }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      if (data.title) setTitle(data.title);
+      if (data.genre) setGenre(data.genre as Genre);
+      if (data.subgenre) setSubgenre(data.subgenre);
+      if (data.synopsis) setSynopsis(data.synopsis);
+    } catch (e) {
+      setError(`Error generando concepto: ${String(e)}`);
+    } finally {
+      setGeneratingConcept(false);
+    }
+  };
+
+  const regenerateWorldWithAI = () => {
+    worldGeneratedRef.current = false;
+    setGeneratingWorld(true);
+    setError('');
+    fetch('/api/world/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title, genre, subgenre, synopsis,
+        characterNames: characters.filter(c => c.name).map(c => c.name),
+      }),
+    })
+      .then(res => res.ok ? res.json() : Promise.reject(new Error(res.statusText)))
+      .then(data => {
+        setSetting(data.setting ?? '');
+        setEra(data.era ?? '');
+        setCentralConflict(data.centralConflict ?? '');
+        setThemes(Array.isArray(data.themes) ? data.themes.join(', ') : (data.themes ?? ''));
+        setPhysicsRules(Array.isArray(data.physicsRules) ? data.physicsRules.join('\n') : (data.physicsRules ?? ''));
+        setTone(data.tone ?? '');
+        worldGeneratedRef.current = true;
+      })
+      .catch(e => setError(`Error generando mundo: ${String(e)}`))
+      .finally(() => setGeneratingWorld(false));
   };
 
   // Form state
@@ -247,7 +297,38 @@ export default function BookWizard({ step, onStepChange, onCreated, onCancel, lo
         {step === 'concepto' && (
           <div className="fade-in">
             <h2 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '0.25rem' }}>Concepto</h2>
-            <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>La base de tu historia</p>
+            <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem', marginBottom: '1rem' }}>La base de tu historia</p>
+
+            {/* AI concept generator */}
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', padding: '1rem', marginBottom: '1.5rem' }}>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-dim)', marginBottom: '0.75rem', fontWeight: 500 }}>
+                ✨ Genera el concepto completo con IA — título, género, subgénero y sinopsis
+              </p>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  style={{ ...inputStyle, flex: 1 }}
+                  value={conceptSeed}
+                  onChange={e => setConceptSeed(e.target.value)}
+                  placeholder="Semilla opcional: ej. 'vampiros en Marte', 'detective con amnesia'..."
+                  onKeyDown={e => e.key === 'Enter' && !generatingConcept && generateConceptWithAI()}
+                />
+                <button
+                  onClick={generateConceptWithAI}
+                  disabled={generatingConcept}
+                  style={{
+                    background: generatingConcept ? 'var(--accent-dim)' : 'var(--accent)',
+                    border: 'none', borderRadius: '8px', padding: '0.65rem 1rem',
+                    color: 'white', cursor: generatingConcept ? 'wait' : 'pointer',
+                    fontWeight: 600, fontSize: '0.85rem', whiteSpace: 'nowrap',
+                    display: 'flex', alignItems: 'center', gap: '0.4rem',
+                  }}
+                >
+                  {generatingConcept
+                    ? <><span className="spinner" style={{ width: 13, height: 13, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', display: 'inline-block' }} /> Generando...</>
+                    : '✨ Generar concepto'}
+                </button>
+              </div>
+            </div>
 
             <div style={fieldStyle}>
               <label style={labelStyle}>Título</label>
@@ -476,11 +557,23 @@ export default function BookWizard({ step, onStepChange, onCreated, onCancel, lo
             <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
               Las reglas del mundo se usan para detectar inconsistencias. Se genera automáticamente con IA al entrar.
             </p>
-            {generatingWorld && (
-              <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem', marginBottom: '1rem', color: 'var(--text-dim)', fontSize: '0.9rem' }}>
-                ⏳ Generando mundo con IA...
-              </div>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+              <button
+                onClick={regenerateWorldWithAI}
+                disabled={generatingWorld || !title || !synopsis}
+                style={{
+                  background: generatingWorld || !title || !synopsis ? 'var(--border)' : 'var(--accent)',
+                  border: 'none', borderRadius: '8px', padding: '0.5rem 1.1rem',
+                  color: 'white', cursor: generatingWorld || !title || !synopsis ? 'not-allowed' : 'pointer',
+                  fontWeight: 600, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem',
+                }}
+              >
+                {generatingWorld
+                  ? <><span className="spinner" style={{ width: 13, height: 13, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', display: 'inline-block' }} /> Generando...</>
+                  : '✨ Generar mundo con IA'}
+              </button>
+              {generatingWorld && <span style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>Analizando sinopsis y personajes...</span>}
+            </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div style={fieldStyle}>

@@ -1,4 +1,27 @@
-import { CreateBookPayload, StateBible } from '../types';
+import { CreateBookPayload, StateBible, Genre } from '../types';
+
+export function buildConceptGeneratorPrompt(seed?: string): string {
+  const seedLine = seed?.trim()
+    ? `SEMILLA O TEMA DEL USUARIO: ${seed}`
+    : 'SEMILLA: Inventa un concepto original y sorprendente.';
+  return `Eres un editor literario de nivel editorial. Genera un concepto original para una novela.
+
+${seedLine}
+
+Requisitos del concepto:
+- El título debe ser evocador, no genérico
+- La sinopsis debe tener 2-3 párrafos: conflicto central, personajes clave, las apuestas
+- El subgénero debe ser específico (ej: "distópico post-pandemia" no solo "ciencia ficción")
+- El género debe ser uno de: scifi, fantasy, thriller, romance, horror, literary, mystery, adventure
+
+Devuelve SOLO JSON con esta estructura:
+{
+  "title": "Título de la novela",
+  "genre": "scifi | fantasy | thriller | romance | horror | literary | mystery | adventure",
+  "subgenre": "subgénero específico",
+  "synopsis": "Párrafo 1: el mundo y el conflicto central.\\n\\nPárrafo 2: el protagonista y lo que arriesga.\\n\\nPárrafo 3: la pregunta central que debe responder la historia."
+}`;
+}
 
 export function buildInitialBiblePrompt(payload: CreateBookPayload): string {
   return `Eres un editor literario de nivel editorial. Analiza la propuesta de libro y genera la Biblia de Estado inicial.
@@ -27,14 +50,52 @@ MUNDO:
 OUTLINE:
 ${payload.outline.map(c => `Cap ${c.number}: "${c.title}" — ${c.summary}`).join('\n')}
 
-Genera la Biblia de Estado inicial (antes del capítulo 1) como JSON puro. Incluye:
-- El estado inicial de cada personaje (todos vivos, ubicación inicial, condición física de inicio)
-- markerUsageCount vacío
-- pendingEmotionalDebts vacío
-- Cualquier regla de mundo CLARA que ya conozcas de la sinopsis
-- Si hay cuentas regresivas mencionadas en el outline, inicializarlas
+Genera la Biblia de Estado inicial (antes del capítulo 1) como JSON puro. Reglas:
+- Todos los personajes empiezan vivos (status: "active"), reactivationRequired: false
+- markerUsageCount: {} (vacío)
+- pendingEmotionalDebts: [] (vacío)
+- Si el outline menciona cuentas regresivas, inicialízalas en timeCountdowns
+- worldState y mainConflictStatus deben reflejar el estado ANTES del cap 1
 
-DEVUELVE SOLO JSON VÁLIDO con la estructura StateBible completa.`;
+DEVUELVE SOLO JSON con EXACTAMENTE esta estructura:
+{
+  "lastUpdatedChapter": 0,
+  "characters": [
+    {
+      "name": "...",
+      "status": "active",
+      "gender": "...",
+      "location": "ubicación inicial",
+      "physicalCondition": "Sin lesiones",
+      "emotionalState": "Estado inicial",
+      "lastSeenChapter": 0,
+      "reactivationRequired": false,
+      "fillerWord": "...",
+      "fillerWordMaxPerChapter": 3,
+      "ticDescription": "...",
+      "ticMaxPerChapter": 3,
+      "ticMaxInBook": 8,
+      "ticCurrentTotal": 0,
+      "ticEvolutionRule": "...",
+      "aliases": []
+    }
+  ],
+  "markerUsageCount": {},
+  "pendingEmotionalDebts": [],
+  "narrativeInventory": {
+    "usedOpeningTypes": [],
+    "usedDynamics": [],
+    "openPlotThreads": [],
+    "resolvedPlotThreads": [],
+    "plannedTwists": []
+  },
+  "worldState": "Estado del mundo antes del capítulo 1",
+  "mainConflictStatus": "Conflicto sin iniciar",
+  "timeCountdowns": [],
+  "worldRules": [],
+  "prohibitedPatterns": [],
+  "patternUsageCount": {}
+}`;
 }
 
 export function buildOutlineGeneratorPrompt(
